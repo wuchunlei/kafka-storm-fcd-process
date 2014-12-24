@@ -6,7 +6,7 @@
 
     <groupId>net.laye.storm</groupId>
     <version>0.0.1-SNAPSHOT</version>
-    <modelVersion>1.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
     <artifactId>kafka-storm-fcd-process</artifactId>
     <dependencies>
         <dependency>
