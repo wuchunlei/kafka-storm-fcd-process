@@ -5,19 +5,62 @@ import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.spout.SchemeAsMultiScheme;
+import backtype.storm.task.ShellBolt;
 import backtype.storm.topology.BasicOutputCollector;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseBasicBolt;
+import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
+
 public class KafkaSpoutTestTopology {
     public static final Logger LOG1 = LoggerFactory.getLogger(KafkaSpoutTestTopology.class);
+    
+    public static class SplitSentence extends ShellBolt implements IRichBolt {
+
+	    public SplitSentence() {
+	      super("python", "splitsentence.py");
+	    }
+
+	    @Override
+	    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	    	declarer.declare(new Fields("word"));
+	    }
+
+	    @Override
+	    public Map<String, Object> getComponentConfiguration() {
+	      return null;
+	    }
+	}
+    
+    public static class WordCount extends BaseBasicBolt {
+        Map<String, Integer> counts = new HashMap<String, Integer>();
+
+        @Override
+        public void execute(Tuple tuple, BasicOutputCollector collector) {
+          String word = tuple.getString(0);
+          Integer count = counts.get(word);
+          if (count == null)
+            count = 0;
+          count++;
+          counts.put(word, count);
+          collector.emit(new Values(word, count));
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+          declarer.declare(new Fields("word", "count"));
+        }
+     }
     
 	public static class PrinterBolt extends BaseBasicBolt {
 		  		
@@ -39,14 +82,16 @@ public class KafkaSpoutTestTopology {
     }
 
     public StormTopology buildTopology() {
-    	String topicName = "stormseven";
+    	String topicName = "stormone";
         SpoutConfig kafkaConfig = new SpoutConfig(brokerHosts, topicName, "/" + topicName, UUID.randomUUID().toString());
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
         kafkaConfig.forceFromStart = false;
         kafkaConfig.zkPort = 2181;
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("words", new KafkaSpout(kafkaConfig));
-        builder.setBolt("print", new PrinterBolt(), 2).shuffleGrouping("words");
+        builder.setSpout("spout", new KafkaSpout(kafkaConfig));
+        builder.setBolt("split", new SplitSentence(), 2).shuffleGrouping("spout");
+        //builder.setBolt("count", new WordCount(), 2).fieldsGrouping("split", new Fields("word"));
+        builder.setBolt("print", new PrinterBolt(), 2).shuffleGrouping("split");
         return builder.createTopology();
     }
 

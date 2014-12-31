@@ -16,9 +16,15 @@
 import storm
 
 class SplitSentenceBolt(storm.BasicBolt):
+    def initialize(self, stormconf, context):
+        storm.log('initialized')
+        
     def process(self, tup):
-        words = tup.values[0].split(" ")
-        for word in words:
-          storm.emit([word])
+        words = tup.values[0]
+        storm.log(words)
+        storm.emit([words])
+        
+    def __exit__(self):
+        storm.log('quit')
 
 SplitSentenceBolt().run()
