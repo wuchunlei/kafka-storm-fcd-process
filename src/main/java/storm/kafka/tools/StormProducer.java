@@ -5,13 +5,34 @@ import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 
 import java.util.Properties;
+import java.util.List;
+import java.util.ArrayList;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
-
+import com.alibaba.fastjson.JSON;
 
 public class StormProducer {
-
+	class GPSInfo {
+		private String index;
+		private String Lon;
+		private String Lat;
+		
+		public String getIndex() {return index;}
+		public void setINdex(String index) {this.index = index;}
+		
+		public String getLon() {return Lon;}
+		public void setLon(String Lon) {this.Lon = Lon;}
+		
+		public String getLat() {return Lat;}
+		public void setLat(String Lat) {this.Lat = Lat;}
+	}
+	
+	class Car {
+		private List<GPSInfo> location = new ArrayList<GPSInfo>();
+		
+		public List<GPSInfo> getInfo() {return location;}
+		public void setInfo(List<GPSInfo> location) {this.location = location;}
+	}
 
     private static String[] sentences = new String[]{
             "the cow jumped over the moon",
@@ -20,13 +41,20 @@ public class StormProducer {
             "how many apples can you eat",
     };
     
-    public static String BuildJson() throws JSONException {
-    	JSONArray list = new JSONArray();
-    	String str = "{'index':'1', 'Lon':'139.40', 'Lat':'40.21'}";
-    	list.add(str);
-    	str = "{'index':'2', 'Lon':'139.41', 'Lat':'40.22'}";
-    	list.add(str);
-    	return list.toJSONString();
+     public String BuildJson() throws JSONException{
+    	Car car = new Car();
+    	GPSInfo gps = new GPSInfo();
+    	gps.setINdex("1");
+    	gps.setLon("139.40");
+    	gps.setLat("40.21");
+    	GPSInfo gps2 = new GPSInfo();
+    	gps2.setINdex("2");
+    	gps2.setLon("139.41");
+    	gps2.setLat("40.22");
+    	car.getInfo().add(gps);
+    	car.getInfo().add(gps2);
+    	String jsonString = JSON.toJSONString(car);
+    	return jsonString;
     }
     
     public static void main(String args[]) throws InterruptedException {
@@ -38,7 +66,8 @@ public class StormProducer {
         //props.put("request.timeout.ms", "60000");
         ProducerConfig config = new ProducerConfig(props);
         Producer<String, String> producer = new Producer<String, String>(config);
-        String stroutput = BuildJson();
+        StormProducer stormproducer = new StormProducer();
+        String stroutput = stormproducer.BuildJson();
         while (true) {
         	KeyedMessage<String, String> data = new KeyedMessage<String, String>("stormone", stroutput);
             producer.send(data);

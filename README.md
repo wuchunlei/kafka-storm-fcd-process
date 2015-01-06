@@ -5,7 +5,7 @@ kafka-storm-fcd-process
 + Modify the six machines's hosts in /etc/hosts to node01~node06.
 
 ##build for running on a Storm cluster:
-+ mvn clean package -P cluster
++ mvn clean package
 + copy target/kafka-storm-fcd-process-0.0.2-jar-with-dependencies.jar to node01/node02
 
 ## zookeeper

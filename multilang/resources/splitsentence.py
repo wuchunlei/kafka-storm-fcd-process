@@ -13,15 +13,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# -*- encoding: utf-8 -*-
 import storm
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 class SplitSentenceBolt(storm.BasicBolt):
     def initialize(self, stormconf, context):
         storm.log('initialized')
         
     def process(self, tup):
-        words = tup.values[0]
+        words = (tup.values[0])
         storm.log(words)
+        try: 
+            jsondatas = json.loads(words)
+        except ValueError, e:
+            storm.log(words)
+        storm.log(str(len(jsondatas)))
+        for i in range(len(jsondatas['info'])):
+            jsondata = jsondatas['info'][i]
+            index = jsondata['index']
+            lon = jsondata['lon']
+            lat = jsondata['lat']
         storm.emit([words])
         
     def __exit__(self):
